@@ -1,13 +1,18 @@
 import { AuthError } from "../errors/AuthError";
 import { NextFunction, Request, Response } from "express";
-import jwt, { JwtPayload } from "jsonwebtoken";
-import { createAccessToken, createRefreshToken } from "../utils/jwt";
+import {
+  createAccessToken,
+  verifyAccessToken,
+  verifyRefreshToken,
+} from "../utils/jwt";
+import jwt from "jsonwebtoken";
+import db from "../utils/prisma";
 
 interface CustomRequest extends Request {
-  userId?: string;
+  userId: string;
 }
 
-const verifyTokenMiddleware = async (
+const authMiddleware = async (
   req: CustomRequest,
   res: Response,
   next: NextFunction
@@ -19,10 +24,7 @@ const verifyTokenMiddleware = async (
   }
 
   try {
-    const decoded = jwt.verify(
-      accessToken,
-      process.env.ACCESS_TOKEN_SECRET
-    ) as JwtPayload;
+    const decoded = verifyAccessToken(accessToken);
 
     req.userId = decoded.userId;
 
@@ -35,26 +37,33 @@ const verifyTokenMiddleware = async (
         return next(new AuthError("Unauthorized"));
       }
 
-      const decoded = jwt.verify(
-        refreshToken,
-        process.env.REFRESH_TOKEN_SECRET
-      ) as JwtPayload;
+      const decoded = verifyRefreshToken(refreshToken);
+
+      if (!decoded) {
+        return next(new AuthError("Unauthorized"));
+      }
+
+      const user = await db.user.findUnique({ where: { id: decoded.userId } });
+
+      if (!user) {
+        return next(new AuthError("Unauthorized"));
+      }
 
       const newAccessToken = createAccessToken({
-        userId: decoded.userId,
+        userId: user.id,
       });
 
-      res.cookie("accessToken", newAccessToken, {
+      res.cookie("accessToken", accessToken, {
         httpOnly: true,
-        maxAge: 60 * 1000,
+        maxAge: 5000, // 5 seconds
         secure: process.env.NODE_ENV === "production",
       });
 
       next();
     }
 
-    return next(new AuthError("Unauthorized"));
+    next(new AuthError("Unauthorized"));
   }
 };
 
-export default verifyTokenMiddleware;
+export default authMiddleware;

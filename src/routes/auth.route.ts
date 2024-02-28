@@ -8,7 +8,12 @@ import verifyTokenMiddleware from "../middlewares/verifyTokenMiddleware";
 
 import db from "../utils/prisma";
 import bcrypt from "bcrypt";
-import jwt from "jsonwebtoken";
+import {
+  createAccessToken,
+  createRefreshToken,
+  verifyRefreshToken,
+} from "../utils/jwt";
+import authMiddleware from "../middlewares/authMiddleware";
 
 const router = express.Router();
 
@@ -80,18 +85,25 @@ router.post(
         return next(new AuthError("Wrong credentials"));
       }
 
-      // Setting up access token
-      const accessToken = jwt.sign(
-        { userId: existingUser.id },
-        process.env.JWT_SECRET,
-        {
-          expiresIn: "2 days",
-        }
-      );
+      // Setting up access token and refresh token
+      const accessToken = createAccessToken({
+        userId: existingUser.id,
+      });
+
+      const refreshToken = createRefreshToken({
+        userId: existingUser.id,
+      });
 
       res.cookie("accessToken", accessToken, {
         httpOnly: true,
-        expires: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000),
+        maxAge: 5000, // 5 seconds
+        secure: process.env.NODE_ENV === "production",
+      });
+
+      res.cookie("refreshToken", refreshToken, {
+        httpOnly: true,
+        maxAge: 7 * 24 * 60 * 60 * 1000,
+        secure: process.env.NODE_ENV === "production",
       });
 
       const { password, ...userWithoutPass } = existingUser;
@@ -100,6 +112,7 @@ router.post(
         message: "User logged In successfully",
         user: userWithoutPass,
         accessToken,
+        refreshToken,
       });
     } catch (error) {
       console.log(error);
@@ -109,13 +122,60 @@ router.post(
 );
 
 // Sign Out user
-router.post(
-  "/signout",
-  verifyTokenMiddleware,
-  async (req: Request, res: Response) => {
-    // todo
-    res.clearCookie("accessToken");
-    res.status(200).json({ message: "User logged out successfully" });
+router.post("/signout", authMiddleware, async (req: Request, res: Response) => {
+  // todo
+  res.clearCookie("accessToken");
+  res.status(200).json({ message: "User logged out successfully" });
+});
+
+// refresh token
+// router.get(
+//   "/refresh",
+//   async (req: Request, res: Response, next: NextFunction) => {
+//     const { refreshToken } = req.cookies;
+
+//     if (!refreshToken) {
+//       return next(new AuthError("No refresh token"));
+//     }
+
+//     const decoded = verifyRefreshToken(refreshToken);
+
+//     if (!decoded) {
+//       return next(new AuthError("Invalid refresh token"));
+//     }
+
+//     const user = await db.user.findUnique({ where: { id: decoded.userId } });
+
+//     if (!user) {
+//       return next(new AuthError("User not found"));
+//     }
+
+//     const accessToken = createAccessToken({
+//       userId: user.id,
+//     });
+
+//     res.cookie("accessToken", accessToken, {
+//       httpOnly: true,
+//       maxAge: 5000, // 5 seconds
+//       secure: process.env.NODE_ENV === "production",
+//     });
+
+//     res.status(200).json({ accessToken });
+//   }
+// );
+
+interface CustomRequest extends Request {
+  userId: string;
+}
+
+// Protected route test
+router.get(
+  "/protected",
+  authMiddleware,
+  async (req: CustomRequest, res: Response, next: NextFunction) => {
+    res
+      .status(200)
+      .json({ message: "This is a protected route", user: req.userId });
   }
 );
 
