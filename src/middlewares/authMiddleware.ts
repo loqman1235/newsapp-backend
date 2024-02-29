@@ -11,30 +11,36 @@ const authMiddleware = (
   res: Response,
   next: NextFunction
 ) => {
-  // Check if access token exists
-
+  // Get access token from headers
   const reqHeaders = req.headers.authorization;
 
+  // Check if access token is valid
   if (!reqHeaders) return next(new AuthError("Unauthorized"));
 
+  // Get access token
   const accessToken = reqHeaders.split(" ")[1];
 
+  // Check if access token is valid
   if (!accessToken) return next(new AuthError("Unauthorized"));
 
-  // Check if access token is valid
+  // Verify token
   jwt.verify(
     accessToken,
     process.env.ACCESS_TOKEN_SECRET,
     (err: jwt.VerifyErrors, user) => {
+      // Check if token is valid
       if (err) return next(new AuthError("Invalid token"));
 
+      // Check if user exists
       if (!user) return next(new AuthError("Invalid token"));
 
+      // Get userId from token
       const { userId } = user as { userId: string };
 
-      // Fix this
+      // Set userId in request object
       req.userId = userId;
 
+      // Call next middleware
       next();
     }
   );
