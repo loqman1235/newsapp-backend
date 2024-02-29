@@ -5,6 +5,7 @@ import { ValidationError } from "../errors/ValidationError";
 import { AuthError } from "../errors/AuthError";
 import { userCreateSchema, userLoginSchema } from "../validators/userValidator";
 import verifyTokenMiddleware from "../middlewares/verifyTokenMiddleware";
+import jwt from "jsonwebtoken";
 
 import db from "../utils/prisma";
 import bcrypt from "bcrypt";
@@ -94,6 +95,14 @@ router.post(
         userId: existingUser.id,
       });
 
+      // Save refresh token in refresh token table
+      await db.refreshToken.create({
+        data: {
+          token: refreshToken,
+          userId: existingUser.id,
+        },
+      });
+
       res.cookie("accessToken", accessToken, {
         httpOnly: true,
         maxAge: 5000, // 5 seconds
@@ -122,47 +131,55 @@ router.post(
 );
 
 // Sign Out user
-router.post("/signout", authMiddleware, async (req: Request, res: Response) => {
-  // todo
-  res.clearCookie("accessToken");
-  res.status(200).json({ message: "User logged out successfully" });
-});
+router.post(
+  "/signout",
+  authMiddleware,
+  async (req: CustomRequest, res: Response) => {
+    await db.refreshToken.deleteMany({ where: { userId: req.userId } });
 
-// refresh token
-// router.get(
-//   "/refresh",
-//   async (req: Request, res: Response, next: NextFunction) => {
-//     const { refreshToken } = req.cookies;
+    res.status(200).json({ message: "User signed out successfully" });
+  }
+);
 
-//     if (!refreshToken) {
-//       return next(new AuthError("No refresh token"));
-//     }
+// Refresh token
+router.post(
+  "/refresh-token",
+  async (req: Request, res: Response, next: NextFunction) => {
+    const { refreshToken } = req.body;
 
-//     const decoded = verifyRefreshToken(refreshToken);
+    if (!refreshToken)
+      return next(new ValidationError("Refresh token is missing"));
 
-//     if (!decoded) {
-//       return next(new AuthError("Invalid refresh token"));
-//     }
+    try {
+      const decoded = jwt.verify(
+        refreshToken,
+        process.env.REFRESH_TOKEN_SECRET
+      );
 
-//     const user = await db.user.findUnique({ where: { id: decoded.userId } });
+      const { userId } = decoded as { userId: string };
 
-//     if (!user) {
-//       return next(new AuthError("User not found"));
-//     }
+      const existingUser = await db.user.findUnique({ where: { id: userId } });
 
-//     const accessToken = createAccessToken({
-//       userId: user.id,
-//     });
+      if (!existingUser) return next(new AuthError("User not found"));
 
-//     res.cookie("accessToken", accessToken, {
-//       httpOnly: true,
-//       maxAge: 5000, // 5 seconds
-//       secure: process.env.NODE_ENV === "production",
-//     });
+      const existingRefreshToken = await db.refreshToken.findFirst({
+        where: { token: refreshToken, userId },
+      });
 
-//     res.status(200).json({ accessToken });
-//   }
-// );
+      if (!existingRefreshToken)
+        return next(new AuthError("Invalid refresh token"));
+
+      const accessToken = createAccessToken({
+        userId,
+      });
+
+      res.status(200).json({ accessToken });
+    } catch (error) {
+      console.log(error);
+      return next(new AuthError("Invalid refresh token"));
+    }
+  }
+);
 
 interface CustomRequest extends Request {
   userId: string;

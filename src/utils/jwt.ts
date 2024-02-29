@@ -2,7 +2,7 @@ import jwt, { JwtPayload } from "jsonwebtoken";
 
 const createAccessToken = (payload: { userId: string }) => {
   return jwt.sign(payload, process.env.ACCESS_TOKEN_SECRET, {
-    expiresIn: 5000,
+    expiresIn: "40s",
   });
 };
 
