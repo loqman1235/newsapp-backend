@@ -25,11 +25,14 @@ const authMiddleware = (
   jwt.verify(
     accessToken,
     process.env.ACCESS_TOKEN_SECRET,
-    (err: jwt.VerifyErrors, { userId }: { userId: string }) => {
+    (err: jwt.VerifyErrors, user) => {
       if (err) return next(new AuthError("Invalid token"));
 
-      if (!userId) return next(new AuthError("Invalid token"));
+      if (!user) return next(new AuthError("Invalid token"));
 
+      const { userId } = user as { userId: string };
+
+      // Fix this
       req.userId = userId;
 
       next();

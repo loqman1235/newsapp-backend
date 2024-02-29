@@ -139,9 +139,13 @@ router.post(
       return res.status(401).json({ message: "Unauthorized" });
     }
 
-    await db.refreshToken.deleteMany({ where: { userId: req.userId } });
+    try {
+      await db.refreshToken.deleteMany({ where: { userId: req.userId } });
 
-    res.status(200).json({ message: "User signed out successfully" });
+      res.status(200).json({ message: "User signed out successfully" });
+    } catch (error) {
+      console.log(error);
+    }
   }
 );
 
