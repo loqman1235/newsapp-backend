@@ -135,6 +135,10 @@ router.post(
   "/signout",
   authMiddleware,
   async (req: CustomRequest, res: Response) => {
+    if (!req.userId) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+
     await db.refreshToken.deleteMany({ where: { userId: req.userId } });
 
     res.status(200).json({ message: "User signed out successfully" });

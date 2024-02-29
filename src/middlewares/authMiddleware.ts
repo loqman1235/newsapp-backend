@@ -28,7 +28,10 @@ const authMiddleware = (
     (err: jwt.VerifyErrors, { userId }: { userId: string }) => {
       if (err) return next(new AuthError("Invalid token"));
 
+      if (!userId) return next(new AuthError("Invalid token"));
+
       req.userId = userId;
+
       next();
     }
   );
