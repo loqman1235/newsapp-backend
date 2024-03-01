@@ -15,6 +15,7 @@ import {
   verifyRefreshToken,
 } from "../utils/jwt";
 import authMiddleware from "../middlewares/authMiddleware";
+import config from "../config";
 
 const router = express.Router();
 
@@ -105,13 +106,13 @@ router.post(
 
       res.cookie("accessToken", accessToken, {
         httpOnly: true,
-        maxAge: Number(process.env.ACCESS_TOKEN_COOKIE_MAX_AGE),
+        maxAge: Number(config.ACCESS_TOKEN_COOKIE_MAX_AGE),
         secure: process.env.NODE_ENV === "production",
       });
 
       res.cookie("refreshToken", refreshToken, {
         httpOnly: true,
-        maxAge: Number(process.env.REFRESH_TOKEN_COOKIE_MAX_AGE),
+        maxAge: Number(config.REFRESH_TOKEN_COOKIE_MAX_AGE),
         secure: process.env.NODE_ENV === "production",
       });
 
@@ -186,7 +187,7 @@ router.post(
 
       res.cookie("accessToken", accessToken, {
         httpOnly: true,
-        maxAge: Number(process.env.ACCESS_TOKEN_COOKIE_MAX_AGE),
+        maxAge: Number(config.ACCESS_TOKEN_COOKIE_MAX_AGE),
         secure: process.env.NODE_ENV === "production",
       });
 

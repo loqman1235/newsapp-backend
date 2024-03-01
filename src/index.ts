@@ -6,11 +6,9 @@ import dotenv from "dotenv";
 import authRoutes from "./routes/auth.route";
 import errorHandler from "./middlewares/errorMiddleware";
 import { NotFoundError } from "./errors/NotFoundError";
+import config from "./config";
 
 dotenv.config();
-
-const PORT = process.env.PORT || 3002;
-const HOST = process.env.HOST || "localhost";
 
 const app: Application = express();
 
@@ -35,6 +33,6 @@ app.all("*", (req: Request, res: Response, next: NextFunction) => {
 // Middleware for Custom Error Handling
 app.use(errorHandler);
 
-app.listen(PORT, () => {
-  console.log(`Server listening on http://${HOST}:${PORT}`);
+app.listen(config.PORT, () => {
+  console.log(`Server listening on http://${config.HOST}:${config.PORT}`);
 });
