@@ -2,13 +2,13 @@ import jwt, { JwtPayload } from "jsonwebtoken";
 
 const createAccessToken = (payload: { userId: string }) => {
   return jwt.sign(payload, process.env.ACCESS_TOKEN_SECRET, {
-    expiresIn: "40s",
+    expiresIn: process.env.ACCESS_TOKEN_EXPIRES_IN,
   });
 };
 
 const createRefreshToken = (payload: { userId: string }) => {
   return jwt.sign(payload, process.env.REFRESH_TOKEN_SECRET, {
-    expiresIn: "7d",
+    expiresIn: process.env.REFRESH_TOKEN_EXPIRES_IN,
   });
 };
 

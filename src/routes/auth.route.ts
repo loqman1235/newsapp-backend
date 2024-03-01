@@ -105,13 +105,13 @@ router.post(
 
       res.cookie("accessToken", accessToken, {
         httpOnly: true,
-        maxAge: 5000, // 5 seconds
+        maxAge: Number(process.env.ACCESS_TOKEN_COOKIE_MAX_AGE),
         secure: process.env.NODE_ENV === "production",
       });
 
       res.cookie("refreshToken", refreshToken, {
         httpOnly: true,
-        maxAge: 7 * 24 * 60 * 60 * 1000,
+        maxAge: Number(process.env.REFRESH_TOKEN_COOKIE_MAX_AGE),
         secure: process.env.NODE_ENV === "production",
       });
 
@@ -142,6 +142,8 @@ router.post(
     try {
       await db.refreshToken.deleteMany({ where: { userId: req.userId } });
 
+      res.clearCookie("refreshToken");
+      res.clearCookie("accessToken");
       res.status(200).json({ message: "User signed out successfully" });
     } catch (error) {
       console.log(error);
@@ -153,10 +155,9 @@ router.post(
 router.post(
   "/refresh-token",
   async (req: Request, res: Response, next: NextFunction) => {
-    const { refreshToken } = req.body;
+    const { refreshToken } = req.cookies;
 
-    if (!refreshToken)
-      return next(new ValidationError("Refresh token is missing"));
+    if (!refreshToken) return next(new AuthError("Refresh token is missing"));
 
     try {
       const decoded = jwt.verify(
@@ -179,6 +180,14 @@ router.post(
 
       const accessToken = createAccessToken({
         userId,
+      });
+
+      // Save in cookies
+
+      res.cookie("accessToken", accessToken, {
+        httpOnly: true,
+        maxAge: Number(process.env.ACCESS_TOKEN_COOKIE_MAX_AGE),
+        secure: process.env.NODE_ENV === "production",
       });
 
       res.status(200).json({ accessToken });
