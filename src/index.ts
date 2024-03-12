@@ -4,6 +4,7 @@ import express, { Application, NextFunction, Request, Response } from "express";
 import cookieParser from "cookie-parser";
 import dotenv from "dotenv";
 import authRoutes from "./routes/auth.route";
+import postRoutes from "./routes/post.route";
 import errorHandler from "./middlewares/errorMiddleware";
 import { NotFoundError } from "./errors/NotFoundError";
 import config from "./config";
@@ -22,8 +23,11 @@ app.use(
 );
 app.use(cookieParser());
 
+app.use(express.static("public/uploads"));
+
 // Routes
 app.use("/api/auth", authRoutes);
+app.use("/api/posts", postRoutes);
 
 //  404 route not found
 app.all("*", (req: Request, res: Response, next: NextFunction) => {
