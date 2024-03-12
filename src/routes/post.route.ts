@@ -16,11 +16,34 @@ import { createPostSchema } from "../validators/postValidator";
 // Errors imports
 import { DatabaseError } from "../errors/DatabaseError";
 import { ValidationError } from "../errors/ValidationError";
+import { NotFoundError } from "../errors/NotFoundError";
+
+interface CustomRequest extends Request {
+  userId: string;
+}
 
 const router = express.Router();
 
-router.get("/", async (req: Request, res: Response) => {
-  res.send("Posts");
+router.get("/", async (req: Request, res: Response, next: NextFunction) => {
+  // GET POSTS
+  try {
+    const posts = await db.post.findMany({
+      orderBy: { createdAt: "desc" },
+      include: {
+        thumbnail: { select: { url: true } },
+        author: { select: { name: true, email: true } },
+      },
+    });
+
+    if (posts.length === 0) {
+      return next(new NotFoundError("No posts found"));
+    }
+
+    res.status(200).json({ posts });
+  } catch (error) {
+    console.log(error);
+    next(error);
+  }
 });
 
 router.get("/:id", async (req: Request, res: Response) => {
@@ -29,11 +52,11 @@ router.get("/:id", async (req: Request, res: Response) => {
 
 router.post(
   "/",
-  // authMiddleware,
+  authMiddleware,
   upload.single("thumbnail"),
   validationMiddleware(createPostSchema),
   postSlugMiddleware,
-  async (req: Request, res: Response, next: NextFunction) => {
+  async (req: CustomRequest, res: Response, next: NextFunction) => {
     const { title, slug, description, content } = req.body;
 
     try {
@@ -76,8 +99,12 @@ router.post(
               url: secure_url,
             },
           },
+          author: { connect: { id: req.userId } },
         },
-        include: { thumbnail: { select: { url: true } } },
+        include: {
+          thumbnail: { select: { url: true } },
+          author: { select: { id: true, name: true, email: true } },
+        },
       });
 
       if (!createdPost) return next(new DatabaseError());
@@ -94,11 +121,11 @@ router.post(
 );
 
 router.patch("/:id", async (req: Request, res: Response) => {
-  res.send("Update Post");
+  // UPDATE POST
 });
 
 router.delete("/:id", async (req: Request, res: Response) => {
-  res.send("Delete Post");
+  // DELETE POST
 });
 
 export default router;
