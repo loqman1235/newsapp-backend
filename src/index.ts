@@ -5,6 +5,7 @@ import cookieParser from "cookie-parser";
 import dotenv from "dotenv";
 import authRoutes from "./routes/auth.route";
 import postRoutes from "./routes/post.route";
+import catRoutes from "./routes/category.route";
 import errorHandler from "./middlewares/errorMiddleware";
 import { NotFoundError } from "./errors/NotFoundError";
 import config from "./config";
@@ -28,6 +29,7 @@ app.use(express.static("public/uploads"));
 // Routes
 app.use("/api/auth", authRoutes);
 app.use("/api/posts", postRoutes);
+app.use("/api/cats", catRoutes);
 
 //  404 route not found
 app.all("*", (req: Request, res: Response, next: NextFunction) => {
