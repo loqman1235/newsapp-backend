@@ -1,6 +1,6 @@
 import express, { NextFunction, Request, Response } from "express";
 import { validationMiddleware } from "../middlewares/validationMiddleware";
-import catSlugMiddleware from "../middlewares/catSlugMiddleware";
+import slugMiddleware from "../middlewares/slugMiddleware";
 import authMiddleware from "../middlewares/authMiddleware";
 import { DatabaseError } from "../errors/DatabaseError";
 import { NotFoundError } from "../errors/NotFoundError";
@@ -15,7 +15,7 @@ router.post(
   "/",
   authMiddleware,
   validationMiddleware(createCategorySchema),
-  catSlugMiddleware,
+  slugMiddleware("name"),
   async (req: Request, res: Response, next: NextFunction) => {
     const { name, slug } = req.body;
 

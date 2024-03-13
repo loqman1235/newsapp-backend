@@ -1,7 +1,7 @@
 import express, { NextFunction, Request, Response } from "express";
 
 // Middlewares imports
-import postSlugMiddleware from "../middlewares/postSlugMiddleware";
+import slugMiddleware from "../middlewares/slugMiddleware";
 import { validationMiddleware } from "../middlewares/validationMiddleware";
 import authMiddleware from "../middlewares/authMiddleware";
 import upload from "../middlewares/uploadMiddleware";
@@ -55,7 +55,7 @@ router.post(
   authMiddleware,
   upload.single("thumbnail"),
   validationMiddleware(createPostSchema),
-  postSlugMiddleware,
+  slugMiddleware("title"),
   async (req: CustomRequest, res: Response, next: NextFunction) => {
     const { title, slug, description, content } = req.body;
 
