@@ -11,7 +11,10 @@ import db from "../utils/prisma";
 import cloudinary from "../utils/cloudinary";
 
 // Validators imports
-import { createPostSchema } from "../validators/postValidator";
+import {
+  createPostSchema,
+  updatePostSchema,
+} from "../validators/postValidator";
 
 // Errors imports
 import { DatabaseError } from "../errors/DatabaseError";
@@ -24,32 +27,7 @@ interface CustomRequest extends Request {
 
 const router = express.Router();
 
-router.get("/", async (req: Request, res: Response, next: NextFunction) => {
-  // GET POSTS
-  try {
-    const posts = await db.post.findMany({
-      orderBy: { createdAt: "desc" },
-      include: {
-        thumbnail: { select: { url: true } },
-        author: { select: { name: true, email: true } },
-      },
-    });
-
-    if (posts.length === 0) {
-      return next(new NotFoundError("No posts found"));
-    }
-
-    res.status(200).json({ posts });
-  } catch (error) {
-    console.log(error);
-    next(error);
-  }
-});
-
-router.get("/:id", async (req: Request, res: Response) => {
-  res.send("Post");
-});
-
+// CREATE
 router.post(
   "/",
   authMiddleware,
@@ -120,12 +98,150 @@ router.post(
   }
 );
 
-router.patch("/:id", async (req: Request, res: Response) => {
-  // UPDATE POST
+// GET ALL
+router.get("/", async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const posts = await db.post.findMany({
+      orderBy: { createdAt: "desc" },
+      include: {
+        thumbnail: { select: { url: true } },
+        author: { select: { name: true, email: true } },
+      },
+    });
+
+    if (posts.length === 0) {
+      return next(new NotFoundError("No posts found"));
+    }
+
+    res.status(200).json({ posts });
+  } catch (error) {
+    console.log(error);
+    next(error);
+  }
 });
 
-router.delete("/:id", async (req: Request, res: Response) => {
-  // DELETE POST
+// GET ONE
+router.get("/:id", async (req: Request, res: Response, next: NextFunction) => {
+  const { id } = req.params;
+
+  try {
+    const post = await db.post.findUnique({ where: { id } });
+
+    if (!post) return next(new NotFoundError("Post not found"));
+    res.status(200).json({ post });
+  } catch (error) {
+    console.log(error);
+    next(error);
+  }
 });
+
+// UPDATE
+router.patch(
+  "/:id",
+  authMiddleware,
+  upload.single("thumbnail"),
+  validationMiddleware(updatePostSchema),
+  slugMiddleware("title"),
+  async (req: Request, res: Response, next: NextFunction) => {
+    const { id } = req.params;
+
+    if (!id) {
+      return next(
+        new ValidationError("Validation failed", [
+          { field: "id", message: "Post Id is required" },
+        ])
+      );
+    }
+
+    try {
+      const post = await db.post.findUnique({
+        where: { id },
+        include: { thumbnail: true },
+      });
+
+      if (!post) {
+        return next(new NotFoundError("Post not found"));
+      }
+
+      // File extension validation
+      const ext = req.file.originalname.split(".").pop();
+
+      if (ext !== "png" && ext !== "jpg" && ext !== "jpeg") {
+        return next(
+          new ValidationError("Validation failed", [
+            { field: "thumbnail", message: "Invalid file format" },
+          ])
+        );
+      }
+
+      // Upload thumbnail to cloudinary and remove old thumbnail
+      if (req.file) {
+        const { public_id, secure_url } = await cloudinary.uploader.upload(
+          req.file.path,
+          {
+            folder: "newsapp/thumbnails",
+          }
+        );
+
+        await cloudinary.uploader.destroy(post.thumbnail.public_id);
+
+        await db.post.update({
+          where: { id },
+          data: {
+            ...req.body,
+            thumbnail: {
+              update: {
+                public_id,
+                url: secure_url,
+              },
+            },
+          },
+        });
+      } else {
+        await db.post.update({
+          where: { id },
+          data: {
+            ...req.body,
+          },
+        });
+      }
+
+      res.status(200).json({ message: "Post updated successfully" });
+    } catch (error) {
+      console.log(error);
+      next(error);
+    }
+  }
+);
+
+// DELETE
+router.delete(
+  "/:id",
+  authMiddleware,
+  async (req: Request, res: Response, next: NextFunction) => {
+    const { id } = req.params;
+
+    if (!id) {
+      return next(
+        new ValidationError("Validation failed", [
+          { field: "id", message: "Post Id is required" },
+        ])
+      );
+    }
+
+    try {
+      const post = await db.post.findUnique({ where: { id } });
+
+      if (!post) return next(new NotFoundError("Post not found"));
+
+      await db.post.delete({ where: { id } });
+
+      res.status(200).json({ message: "Post deleted successfully" });
+    } catch (error) {
+      console.log(error);
+      next(error);
+    }
+  }
+);
 
 export default router;
