@@ -3,7 +3,7 @@ import slugify from "slugify";
 
 const slugMiddleware =
   (key: string) => async (req: Request, res: Response, next: NextFunction) => {
-    const value = req.body.key;
+    const value = req.body[key];
 
     if (!value) return res.status(400).json({ error: "Missing key" });
 
