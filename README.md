@@ -15,14 +15,14 @@ An app that allows users to create, read, update, and delete news articles with 
 - [Multer](https://www.npmjs.com/package/multer)
 - [Cloudinary](https://cloudinary.com/)
 - [Nodemon](https://www.npmjs.com/package/nodemon)
-- [Cors] (https://www.npmjs.com/package/cors)
-- [Dotenv] (https://www.npmjs.com/package/dotenv)
-- [Prisma Client] (https://www.prisma.io/)
-- [Ts Node] (https://www.npmjs.com/package/ts-node)
-- [Ts Config] (https://www.typescriptlang.org/docs/handbook/tsconfig-json.html)
-- [Zod] (https://www.npmjs.com/package/zod)
-- [Cookie Parser] (https://www.npmjs.com/package/cookie-parser)
-- [Slugify] (https://www.npmjs.com/package/slugify)
+- [Cors](https://www.npmjs.com/package/cors)
+- [Dotenv](https://www.npmjs.com/package/dotenv)
+- [Prisma Client](https://www.prisma.io/)
+- [Ts Node](https://www.npmjs.com/package/ts-node)
+- [Ts Config](https://www.typescriptlang.org/docs/handbook/tsconfig-json.html)
+- [Zod](https://www.npmjs.com/package/zod)
+- [Cookie Parser](https://www.npmjs.com/package/cookie-parser)
+- [Slugify](https://www.npmjs.com/package/slugify)
 
 ## Usage
 
