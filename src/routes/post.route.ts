@@ -215,6 +215,7 @@ router.patch(
             slug,
             description,
             content,
+            // If categories exists, include it in the data object
             ...(categories && {
               categories: {
                 set: categories.map((categoryId: string) => ({
@@ -238,6 +239,7 @@ router.patch(
             slug,
             description,
             content,
+            // If categories exists, include it in the data object
             ...(categories && {
               categories: {
                 set: categories.map((categoryId: string) => ({
