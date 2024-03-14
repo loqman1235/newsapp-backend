@@ -1,9 +1,11 @@
+import { Role } from "@prisma/client";
 import { AuthError } from "../errors/AuthError";
 import { NextFunction, Request, Response } from "express";
 import jwt from "jsonwebtoken";
 
 interface CustomRequest extends Request {
   userId: string;
+  role: Role;
 }
 
 const authMiddleware = (
@@ -23,7 +25,7 @@ const authMiddleware = (
     process.env.ACCESS_TOKEN_SECRET,
     (
       err: jwt.VerifyErrors,
-      user: { userId: string; iat: number; exp: number }
+      user: { userId: string; role: Role; iat: number; exp: number }
     ) => {
       // Check if token is valid
       if (err) return next(new AuthError("Invalid token"));
@@ -32,10 +34,11 @@ const authMiddleware = (
       if (!user) return next(new AuthError("Invalid token"));
 
       // Get userId from token
-      const { userId } = user;
+      const { userId, role } = user;
 
       // Set userId in request object
       req.userId = userId;
+      req.role = role;
 
       // Call next middleware
       next();

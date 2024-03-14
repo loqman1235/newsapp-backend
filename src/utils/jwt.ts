@@ -1,7 +1,8 @@
 import jwt, { JwtPayload } from "jsonwebtoken";
 import config from "../config";
+import { Role } from "@prisma/client";
 
-const createAccessToken = (payload: { userId: string }) => {
+const createAccessToken = (payload: { userId: string; role: Role }) => {
   return jwt.sign(payload, config.ACCESS_TOKEN_SECRET, {
     expiresIn: config.ACCESS_TOKEN_EXPIRES_IN,
   });

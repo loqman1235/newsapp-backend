@@ -5,11 +5,18 @@ import authMiddleware from "../middlewares/authMiddleware";
 import { DatabaseError } from "../errors/DatabaseError";
 import { NotFoundError } from "../errors/NotFoundError";
 import { ValidationError } from "../errors/ValidationError";
+import { AuthError } from "../errors/AuthError";
 import {
   createCategorySchema,
   updateCategorySchema,
 } from "../validators/catValidator";
 import db from "../utils/prisma";
+import { Role } from "@prisma/client";
+
+interface CustomRequest extends Request {
+  userId: string;
+  role: Role;
+}
 
 const router = express.Router();
 
@@ -19,7 +26,12 @@ router.post(
   authMiddleware,
   validationMiddleware(createCategorySchema),
   slugMiddleware("name"),
-  async (req: Request, res: Response, next: NextFunction) => {
+  async (req: CustomRequest, res: Response, next: NextFunction) => {
+    if (req.role !== "ADMIN") {
+      return next(
+        new AuthError("Unauthorized: Only admins can create a category")
+      );
+    }
     const { name, slug } = req.body;
 
     try {
@@ -131,8 +143,14 @@ router.patch(
   authMiddleware,
   slugMiddleware("name"),
   validationMiddleware(updateCategorySchema),
-  async (req: Request, res: Response, next: NextFunction) => {
+  async (req: CustomRequest, res: Response, next: NextFunction) => {
     const { id } = req.params;
+
+    if (req.role !== "ADMIN") {
+      return next(
+        new AuthError("Unauthorized: Only admins can update a category")
+      );
+    }
 
     if (!id) {
       return next(
@@ -171,8 +189,14 @@ router.patch(
 router.delete(
   "/:id",
   authMiddleware,
-  async (req: Request, res: Response, next: NextFunction) => {
+  async (req: CustomRequest, res: Response, next: NextFunction) => {
     const { id } = req.params;
+
+    if (req.role !== "ADMIN") {
+      return next(
+        new AuthError("Unauthorized: Only admins can delete a category")
+      );
+    }
 
     if (!id) {
       return next(

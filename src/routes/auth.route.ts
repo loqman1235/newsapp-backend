@@ -16,6 +16,7 @@ import {
 } from "../utils/jwt";
 import authMiddleware from "../middlewares/authMiddleware";
 import config from "../config";
+import { Role } from "@prisma/client";
 
 const router = express.Router();
 
@@ -90,6 +91,7 @@ router.post(
       // Setting up access token and refresh token
       const accessToken = createAccessToken({
         userId: existingUser.id,
+        role: existingUser.role,
       });
 
       const refreshToken = createRefreshToken({
@@ -181,6 +183,7 @@ router.post(
 
       const accessToken = createAccessToken({
         userId,
+        role: existingUser.role,
       });
 
       // Save in cookies
@@ -201,6 +204,7 @@ router.post(
 
 interface CustomRequest extends Request {
   userId: string;
+  role: Role;
 }
 
 // Protected route test
