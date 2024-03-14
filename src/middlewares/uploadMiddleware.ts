@@ -3,9 +3,9 @@ import multer, { FileFilterCallback } from "multer";
 import { ValidationError } from "../errors/ValidationError";
 
 const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    cb(null, "public/uploads");
-  },
+  // destination: (req, file, cb) => {
+  //   cb(null, "public/uploads");
+  // },
   filename: (req, file, cb) => {
     const ext = file.originalname.split(".").pop();
     const suffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
