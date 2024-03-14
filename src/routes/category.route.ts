@@ -58,7 +58,20 @@ router.get("/", async (req: Request, res: Response, next: NextFunction) => {
   try {
     const cats = await db.category.findMany({
       orderBy: { createdAt: "desc" },
-      select: { id: true, name: true, published: true },
+      select: {
+        id: true,
+        name: true,
+        posts: {
+          select: {
+            id: true,
+            title: true,
+            slug: true,
+            content: true,
+            thumbnail: { select: { id: true, url: true } },
+            author: { select: { id: true, name: true, email: true } },
+          },
+        },
+      },
       // where: { published: true },
     });
 
@@ -84,7 +97,23 @@ router.get("/:id", async (req: Request, res: Response, next: NextFunction) => {
     );
   }
   try {
-    const category = await db.category.findUnique({ where: { id } });
+    const category = await db.category.findUnique({
+      where: { id },
+      select: {
+        id: true,
+        name: true,
+        posts: {
+          select: {
+            id: true,
+            title: true,
+            slug: true,
+            content: true,
+            thumbnail: { select: { id: true, url: true } },
+            author: { select: { id: true, name: true, email: true } },
+          },
+        },
+      },
+    });
 
     if (!category) {
       return next(new NotFoundError("Category not found"));

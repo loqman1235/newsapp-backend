@@ -20,6 +20,7 @@ import {
 import { DatabaseError } from "../errors/DatabaseError";
 import { ValidationError } from "../errors/ValidationError";
 import { NotFoundError } from "../errors/NotFoundError";
+import slugify from "slugify";
 
 interface CustomRequest extends Request {
   userId: string;
@@ -35,7 +36,7 @@ router.post(
   validationMiddleware(createPostSchema),
   slugMiddleware("title"),
   async (req: CustomRequest, res: Response, next: NextFunction) => {
-    const { title, slug, description, content } = req.body;
+    const { title, slug, description, content, categories } = req.body;
 
     try {
       if (!req.file) {
@@ -78,10 +79,16 @@ router.post(
             },
           },
           author: { connect: { id: req.userId } },
+          categories: {
+            connect: categories.map((categoryId: string) => ({
+              id: categoryId,
+            })),
+          },
         },
         include: {
           thumbnail: { select: { url: true } },
           author: { select: { id: true, name: true, email: true } },
+          categories: { select: { id: true, name: true } },
         },
       });
 
@@ -102,11 +109,16 @@ router.post(
 router.get("/", async (req: Request, res: Response, next: NextFunction) => {
   try {
     const posts = await db.post.findMany({
-      orderBy: { createdAt: "desc" },
-      include: {
-        thumbnail: { select: { url: true } },
-        author: { select: { name: true, email: true } },
+      select: {
+        id: true,
+        title: true,
+        slug: true,
+        content: true,
+        thumbnail: { select: { id: true, url: true } },
+        categories: { select: { id: true, name: true } },
+        author: { select: { id: true, name: true, email: true } },
       },
+      orderBy: { createdAt: "desc" },
     });
 
     if (posts.length === 0) {
@@ -125,7 +137,18 @@ router.get("/:id", async (req: Request, res: Response, next: NextFunction) => {
   const { id } = req.params;
 
   try {
-    const post = await db.post.findUnique({ where: { id } });
+    const post = await db.post.findUnique({
+      where: { id },
+      select: {
+        id: true,
+        title: true,
+        slug: true,
+        content: true,
+        thumbnail: { select: { id: true, url: true } },
+        categories: { select: { id: true, name: true } },
+        author: { select: { id: true, name: true, email: true } },
+      },
+    });
 
     if (!post) return next(new NotFoundError("Post not found"));
     res.status(200).json({ post });
@@ -144,6 +167,7 @@ router.patch(
   slugMiddleware("title"),
   async (req: Request, res: Response, next: NextFunction) => {
     const { id } = req.params;
+    const { title, slug, description, content, categories } = req.body;
 
     if (!id) {
       return next(
@@ -163,19 +187,18 @@ router.patch(
         return next(new NotFoundError("Post not found"));
       }
 
-      // File extension validation
-      const ext = req.file.originalname.split(".").pop();
-
-      if (ext !== "png" && ext !== "jpg" && ext !== "jpeg") {
-        return next(
-          new ValidationError("Validation failed", [
-            { field: "thumbnail", message: "Invalid file format" },
-          ])
-        );
-      }
-
       // Upload thumbnail to cloudinary and remove old thumbnail
       if (req.file) {
+        // File extension validation
+        const ext = req.file?.originalname.split(".").pop();
+
+        if (ext !== "png" && ext !== "jpg" && ext !== "jpeg") {
+          return next(
+            new ValidationError("Validation failed", [
+              { field: "thumbnail", message: "Invalid file format" },
+            ])
+          );
+        }
         const { public_id, secure_url } = await cloudinary.uploader.upload(
           req.file.path,
           {
@@ -188,7 +211,17 @@ router.patch(
         await db.post.update({
           where: { id },
           data: {
-            ...req.body,
+            title,
+            slug,
+            description,
+            content,
+            ...(categories && {
+              categories: {
+                set: categories.map((categoryId: string) => ({
+                  id: categoryId,
+                })),
+              },
+            }),
             thumbnail: {
               update: {
                 public_id,
@@ -201,7 +234,17 @@ router.patch(
         await db.post.update({
           where: { id },
           data: {
-            ...req.body,
+            title,
+            slug,
+            description,
+            content,
+            ...(categories && {
+              categories: {
+                set: categories.map((categoryId: string) => ({
+                  id: categoryId,
+                })),
+              },
+            }),
           },
         });
       }

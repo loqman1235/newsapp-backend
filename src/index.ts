@@ -1,6 +1,5 @@
 import cors from "cors";
 import express, { Application, NextFunction, Request, Response } from "express";
-// import "express-async-errors";
 import cookieParser from "cookie-parser";
 import dotenv from "dotenv";
 import authRoutes from "./routes/auth.route";

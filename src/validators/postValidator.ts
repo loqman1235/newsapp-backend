@@ -20,6 +20,9 @@ export const createPostSchema = z.object({
     .trim()
     .min(1, { message: "Content is required" })
     .min(5, { message: "Content must be at least 5 characters" }),
+  categories: z
+    .array(z.string())
+    .min(1, { message: "At least one category is required" }),
 });
 
 export const updatePostSchema = z.object({
@@ -44,4 +47,5 @@ export const updatePostSchema = z.object({
     .min(1, { message: "Content is required" })
     .min(5, { message: "Content must be at least 5 characters" })
     .optional(),
+  categories: z.array(z.string()).optional(),
 });
