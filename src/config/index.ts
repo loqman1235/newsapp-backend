@@ -1,6 +1,7 @@
 const config = {
   PORT: process.env.PORT || 3002,
   HOST: process.env.HOST || "localhost",
+  CLIENT_URL: process.env.FRONTEND_URL || "http://localhost:3000",
   NODE_ENV: process.env.NODE_ENV || "development",
   ACCESS_TOKEN_SECRET: process.env.ACCESS_TOKEN_SECRET,
   REFRESH_TOKEN_SECRET: process.env.REFRESH_TOKEN_SECRET,
