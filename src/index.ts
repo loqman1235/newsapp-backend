@@ -1,6 +1,7 @@
 import cors from "cors";
 import express, { Application, NextFunction, Request, Response } from "express";
 import cookieParser from "cookie-parser";
+import helmet from "helmet";
 import dotenv from "dotenv";
 import authRoutes from "./routes/auth.route";
 import postRoutes from "./routes/post.route";
@@ -22,6 +23,7 @@ app.use(
   })
 );
 app.use(cookieParser());
+app.use(helmet());
 
 app.use(express.static("public/uploads"));
 
