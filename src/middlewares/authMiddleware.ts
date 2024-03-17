@@ -14,7 +14,8 @@ const authMiddleware = (
   next: NextFunction
 ) => {
   // Get access token from cookies
-  const { accessToken } = req.cookies;
+  const reqHeaders = req.headers;
+  const accessToken = reqHeaders.authorization?.split(" ")[1];
 
   // Check if access token is valid
   if (!accessToken) return next(new AuthError("Unauthorized"));

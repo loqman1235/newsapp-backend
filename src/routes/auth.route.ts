@@ -17,6 +17,7 @@ import {
 import authMiddleware from "../middlewares/authMiddleware";
 import config from "../config";
 import { Role } from "@prisma/client";
+import rateLimitMiddleware from "../middlewares/rateLimitMiddleware";
 
 const router = express.Router();
 
@@ -66,6 +67,7 @@ router.post(
 router.post(
   "/signin",
   validationMiddleware(userLoginSchema),
+  rateLimitMiddleware,
   async (req: Request, res: Response, next: NextFunction) => {
     const { email, password: userPass } = req.body;
 
@@ -106,11 +108,11 @@ router.post(
         },
       });
 
-      res.cookie("accessToken", accessToken, {
-        httpOnly: true,
-        maxAge: Number(config.ACCESS_TOKEN_COOKIE_MAX_AGE),
-        secure: process.env.NODE_ENV === "production",
-      });
+      // res.cookie("accessToken", accessToken, {
+      //   httpOnly: true,
+      //   maxAge: Number(config.ACCESS_TOKEN_COOKIE_MAX_AGE),
+      //   secure: process.env.NODE_ENV === "production",
+      // });
 
       res.cookie("refreshToken", refreshToken, {
         httpOnly: true,
@@ -124,7 +126,6 @@ router.post(
         message: "User logged In successfully",
         user: userWithoutPass,
         accessToken,
-        refreshToken,
       });
     } catch (error) {
       console.log(error);
@@ -137,7 +138,7 @@ router.post(
 router.post(
   "/signout",
   authMiddleware,
-  async (req: CustomRequest, res: Response) => {
+  async (req: CustomRequest, res: Response, next: NextFunction) => {
     if (!req.userId) {
       return res.status(401).json({ message: "Unauthorized" });
     }
@@ -146,10 +147,10 @@ router.post(
       await db.refreshToken.deleteMany({ where: { userId: req.userId } });
 
       res.clearCookie("refreshToken");
-      res.clearCookie("accessToken");
       res.status(200).json({ message: "User signed out successfully" });
     } catch (error) {
       console.log(error);
+      next(error);
     }
   }
 );
@@ -170,7 +171,10 @@ router.post(
 
       const { userId } = decoded as { userId: string };
 
-      const existingUser = await db.user.findUnique({ where: { id: userId } });
+      const existingUser = await db.user.findUnique({
+        where: { id: userId },
+        select: { id: true, name: true, email: true, role: true },
+      });
 
       if (!existingUser) return next(new AuthError("User not found"));
 
@@ -187,14 +191,7 @@ router.post(
       });
 
       // Save in cookies
-
-      res.cookie("accessToken", accessToken, {
-        httpOnly: true,
-        maxAge: Number(config.ACCESS_TOKEN_COOKIE_MAX_AGE),
-        secure: process.env.NODE_ENV === "production",
-      });
-
-      res.status(200).json({ accessToken });
+      res.status(200).json({ accessToken, user: existingUser });
     } catch (error) {
       console.log(error);
       return next(new AuthError("Invalid refresh token"));
@@ -217,5 +214,10 @@ router.get(
       .json({ message: "This is a protected route", user: req.userId });
   }
 );
+
+// Verify token
+router.get("/verify", authMiddleware, (req: CustomRequest, res: Response) => {
+  res.status(200).json({ isValid: true });
+});
 
 export default router;
