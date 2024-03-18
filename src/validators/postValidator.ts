@@ -6,7 +6,7 @@ export const createPostSchema = z.object({
     .trim()
     .min(1, { message: "Title is required" })
     .min(5, { message: "Title must be at least 5 characters" })
-    .max(40, { message: "Title must be at not be more than 30 characters" }),
+    .max(100, { message: "Title must be at not be more than 100 characters" }),
   description: z
     .string()
     .trim()
@@ -31,7 +31,7 @@ export const updatePostSchema = z.object({
     .trim()
     .min(1, { message: "Title is required" })
     .min(5, { message: "Title must be at least 5 characters" })
-    .max(40, { message: "Title must be at not be more than 30 characters" })
+    .max(100, { message: "Title must be at not be more than 100 characters" })
     .optional(),
   description: z
     .string()

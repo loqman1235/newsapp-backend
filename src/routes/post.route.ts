@@ -108,6 +108,7 @@ router.post(
 // GET ALL
 router.get("/", async (req: Request, res: Response, next: NextFunction) => {
   try {
+    let limit = parseInt(req.query.limit as string) || undefined;
     const posts = await db.post.findMany({
       select: {
         id: true,
@@ -119,6 +120,7 @@ router.get("/", async (req: Request, res: Response, next: NextFunction) => {
         author: { select: { id: true, name: true, email: true } },
       },
       orderBy: { createdAt: "desc" },
+      take: limit,
     });
 
     if (posts.length === 0) {
