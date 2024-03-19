@@ -299,7 +299,7 @@ router.delete(
 
 // UPDATE POST VIEWS
 router.patch(
-  "/:id/views",
+  "/:id/view",
   async (req: Request, res: Response, next: NextFunction) => {
     const { id } = req.params;
 
