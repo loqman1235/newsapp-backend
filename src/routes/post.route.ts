@@ -140,6 +140,38 @@ router.get("/", async (req: Request, res: Response, next: NextFunction) => {
   }
 });
 
+// GET POPULAR POSTS
+router.get(
+  "/popular",
+  async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const posts = await db.post.findMany({
+        select: {
+          id: true,
+          title: true,
+          slug: true,
+          content: true,
+          views: true,
+          thumbnail: { select: { id: true, url: true } },
+          categories: { select: { id: true, name: true } },
+          author: { select: { id: true, name: true, email: true } },
+        },
+        orderBy: { views: "desc" },
+        take: 5,
+        where: {
+          views: {
+            gt: 100,
+          },
+        },
+      });
+      res.status(200).json({ posts });
+    } catch (error) {
+      console.log(error);
+      next(error);
+    }
+  }
+);
+
 // GET ONE
 router.get("/:id", async (req: Request, res: Response, next: NextFunction) => {
   const { id } = req.params;
@@ -297,7 +329,7 @@ router.delete(
   }
 );
 
-// UPDATE POST VIEWS
+// INCREMENT VIEWS
 router.patch(
   "/:id/view",
   async (req: Request, res: Response, next: NextFunction) => {
