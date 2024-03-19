@@ -98,45 +98,48 @@ router.get("/", async (req: Request, res: Response, next: NextFunction) => {
   }
 });
 // GET ONE
-router.get("/:id", async (req: Request, res: Response, next: NextFunction) => {
-  const { id } = req.params;
+router.get(
+  "/:slug",
+  async (req: Request, res: Response, next: NextFunction) => {
+    const { slug } = req.params;
 
-  if (!id) {
-    return next(
-      new ValidationError("Validation failed", [
-        { field: "id", message: "Category id is required" },
-      ])
-    );
-  }
-  try {
-    const category = await db.category.findUnique({
-      where: { id },
-      select: {
-        id: true,
-        name: true,
-        posts: {
-          select: {
-            id: true,
-            title: true,
-            slug: true,
-            content: true,
-            thumbnail: { select: { id: true, url: true } },
-            author: { select: { id: true, name: true, email: true } },
+    if (!slug) {
+      return next(
+        new ValidationError("Validation failed", [
+          { field: "slug", message: "Category slug is required" },
+        ])
+      );
+    }
+    try {
+      const category = await db.category.findUnique({
+        where: { slug },
+        select: {
+          id: true,
+          name: true,
+          posts: {
+            select: {
+              id: true,
+              title: true,
+              slug: true,
+              content: true,
+              thumbnail: { select: { id: true, url: true } },
+              author: { select: { id: true, name: true, email: true } },
+            },
           },
         },
-      },
-    });
+      });
 
-    if (!category) {
-      return next(new NotFoundError("Category not found"));
+      if (!category) {
+        return next(new NotFoundError("Category not found"));
+      }
+
+      res.status(200).json({ category });
+    } catch (error) {
+      console.log(error);
+      next(error);
     }
-
-    res.status(200).json({ category });
-  } catch (error) {
-    console.log(error);
-    next(error);
   }
-});
+);
 // UPDATE
 router.patch(
   "/:id",

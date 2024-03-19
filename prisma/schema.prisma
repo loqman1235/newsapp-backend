@@ -34,8 +34,8 @@ model RefreshToken {
 
 model Post {
   id          String     @id @default(auto()) @map("_id") @db.ObjectId
-  slug        String
-  title       String
+  title       String     @unique
+  slug        String     @unique
   description String?
   content     String
   views       Int        @default(0)
@@ -55,7 +55,7 @@ model Post {
 model Category {
   id        String   @id @default(auto()) @map("_id") @db.ObjectId
   name      String   @unique
-  slug      String
+  slug      String   @unique
   published Boolean  @default(false)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

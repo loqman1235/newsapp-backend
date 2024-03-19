@@ -38,6 +38,20 @@ router.post(
     const { title, slug, description, content, categories } = req.body;
 
     try {
+      const existingPost = await db.post.findFirst({
+        where: {
+          title,
+        },
+      });
+
+      if (existingPost) {
+        return next(
+          new ValidationError("Validation failed", [
+            { field: "slug", message: "Title already exists" },
+          ])
+        );
+      }
+
       if (!req.file) {
         return next(
           new ValidationError("Validation failed", [
@@ -173,30 +187,41 @@ router.get(
 );
 
 // GET ONE
-router.get("/:id", async (req: Request, res: Response, next: NextFunction) => {
-  const { id } = req.params;
+router.get(
+  "/:slug",
+  async (req: Request, res: Response, next: NextFunction) => {
+    const { slug } = req.params;
 
-  try {
-    const post = await db.post.findUnique({
-      where: { id },
-      select: {
-        id: true,
-        title: true,
-        slug: true,
-        content: true,
-        thumbnail: { select: { id: true, url: true } },
-        categories: { select: { id: true, name: true } },
-        author: { select: { id: true, name: true, email: true } },
-      },
-    });
+    if (!slug) {
+      return next(
+        new ValidationError("Validation failed", [
+          { field: "slug", message: "Post slug is required" },
+        ])
+      );
+    }
 
-    if (!post) return next(new NotFoundError("Post not found"));
-    res.status(200).json({ post });
-  } catch (error) {
-    console.log(error);
-    next(error);
+    try {
+      const post = await db.post.findUnique({
+        where: { slug },
+        select: {
+          id: true,
+          title: true,
+          slug: true,
+          content: true,
+          thumbnail: { select: { id: true, url: true } },
+          categories: { select: { id: true, name: true } },
+          author: { select: { id: true, name: true, email: true } },
+        },
+      });
+
+      if (!post) return next(new NotFoundError("Post not found"));
+      res.status(200).json({ post });
+    } catch (error) {
+      console.log(error);
+      next(error);
+    }
   }
-});
+);
 
 // UPDATE
 router.patch(
