@@ -20,7 +20,6 @@ import {
 import { DatabaseError } from "../errors/DatabaseError";
 import { ValidationError } from "../errors/ValidationError";
 import { NotFoundError } from "../errors/NotFoundError";
-import slugify from "slugify";
 
 interface CustomRequest extends Request {
   userId: string;
@@ -109,18 +108,25 @@ router.post(
 router.get("/", async (req: Request, res: Response, next: NextFunction) => {
   try {
     let limit = parseInt(req.query.limit as string) || undefined;
+    let cat = (req.query.catName as string) || undefined;
     const posts = await db.post.findMany({
       select: {
         id: true,
         title: true,
         slug: true,
         content: true,
+        views: true,
         thumbnail: { select: { id: true, url: true } },
         categories: { select: { id: true, name: true } },
         author: { select: { id: true, name: true, email: true } },
       },
       orderBy: { createdAt: "desc" },
       take: limit,
+      where: {
+        categories: {
+          some: { name: { equals: cat, mode: "insensitive" } },
+        },
+      },
     });
 
     if (posts.length === 0) {
@@ -284,6 +290,40 @@ router.delete(
       await db.post.delete({ where: { id } });
 
       res.status(200).json({ message: "Post deleted successfully" });
+    } catch (error) {
+      console.log(error);
+      next(error);
+    }
+  }
+);
+
+// UPDATE POST VIEWS
+router.patch(
+  "/:id/views",
+  async (req: Request, res: Response, next: NextFunction) => {
+    const { id } = req.params;
+
+    if (!id) {
+      return next(
+        new ValidationError("Validation failed", [
+          { field: "id", message: "Post Id is required" },
+        ])
+      );
+    }
+
+    try {
+      const post = await db.post.findUnique({ where: { id } });
+
+      if (!post) return next(new NotFoundError("Post not found"));
+
+      await db.post.update({
+        where: { id },
+        data: { ...{ views: { increment: 1 } } },
+      });
+
+      res
+        .status(200)
+        .json({ message: "Post views updated successfully", post });
     } catch (error) {
       console.log(error);
       next(error);
