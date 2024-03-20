@@ -73,6 +73,7 @@ router.get("/", async (req: Request, res: Response, next: NextFunction) => {
       select: {
         id: true,
         name: true,
+        slug: true,
         posts: {
           select: {
             id: true,

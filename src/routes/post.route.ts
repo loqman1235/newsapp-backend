@@ -207,6 +207,7 @@ router.get(
           id: true,
           title: true,
           slug: true,
+          views: true,
           content: true,
           thumbnail: { select: { id: true, url: true } },
           categories: { select: { id: true, name: true } },
@@ -356,25 +357,25 @@ router.delete(
 
 // INCREMENT VIEWS
 router.patch(
-  "/:id/view",
+  "/:slug/view",
   async (req: Request, res: Response, next: NextFunction) => {
-    const { id } = req.params;
+    const { slug } = req.params;
 
-    if (!id) {
+    if (!slug) {
       return next(
         new ValidationError("Validation failed", [
-          { field: "id", message: "Post Id is required" },
+          { field: "slug", message: "Post slug is required" },
         ])
       );
     }
 
     try {
-      const post = await db.post.findUnique({ where: { id } });
+      const post = await db.post.findUnique({ where: { slug } });
 
       if (!post) return next(new NotFoundError("Post not found"));
 
       await db.post.update({
-        where: { id },
+        where: { slug },
         data: { ...{ views: { increment: 1 } } },
       });
 
