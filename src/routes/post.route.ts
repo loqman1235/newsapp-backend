@@ -131,7 +131,7 @@ router.get("/", async (req: Request, res: Response, next: NextFunction) => {
         content: true,
         views: true,
         thumbnail: { select: { id: true, url: true } },
-        categories: { select: { id: true, name: true } },
+        categories: { select: { id: true, name: true, slug: true } },
         author: { select: { id: true, name: true, email: true } },
       },
       orderBy: { createdAt: "desc" },
