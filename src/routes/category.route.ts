@@ -98,6 +98,21 @@ router.get("/", async (req: Request, res: Response, next: NextFunction) => {
     next(error);
   }
 });
+
+// TOTAL CATEGORIES
+router.get(
+  "/total",
+  async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const total = await db.category.count();
+      res.status(200).json({ total });
+    } catch (error) {
+      console.log(error);
+      next(error);
+    }
+  }
+);
+
 // GET ONE
 router.get(
   "/:slug",
