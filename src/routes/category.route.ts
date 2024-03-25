@@ -27,11 +27,6 @@ router.post(
   validationMiddleware(createCategorySchema),
   slugMiddleware("name"),
   async (req: CustomRequest, res: Response, next: NextFunction) => {
-    if (req.role !== "ADMIN") {
-      return next(
-        new AuthError("Unauthorized: Only admins can create a category")
-      );
-    }
     const { name, slug } = req.body;
 
     try {
@@ -84,6 +79,7 @@ router.get("/", async (req: Request, res: Response, next: NextFunction) => {
             author: { select: { id: true, name: true, email: true } },
           },
         },
+        createdAt: true,
       },
       // where: { published: true },
     });
@@ -210,12 +206,6 @@ router.delete(
   authMiddleware,
   async (req: CustomRequest, res: Response, next: NextFunction) => {
     const { id } = req.params;
-
-    if (req.role !== "ADMIN") {
-      return next(
-        new AuthError("Unauthorized: Only admins can delete a category")
-      );
-    }
 
     if (!id) {
       return next(

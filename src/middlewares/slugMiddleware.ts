@@ -15,6 +15,8 @@ const slugMiddleware =
       remove: /[*+~.()'"!:@]/g,
     });
 
+    req.body.slug = slug;
+
     next();
   };
 
