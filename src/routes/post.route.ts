@@ -35,7 +35,8 @@ router.post(
   validationMiddleware(createPostSchema),
   slugMiddleware("title"),
   async (req: CustomRequest, res: Response, next: NextFunction) => {
-    const { title, slug, description, content, categories } = req.body;
+    const { title, slug, description, content, categories, published } =
+      req.body;
 
     try {
       const existingPost = await db.post.findFirst({
@@ -97,6 +98,7 @@ router.post(
               id: categoryId,
             })),
           },
+          published: published === "true" ? true : false,
         },
         include: {
           thumbnail: { select: { url: true } },
@@ -133,6 +135,7 @@ router.get("/", async (req: Request, res: Response, next: NextFunction) => {
         thumbnail: { select: { id: true, url: true } },
         categories: { select: { id: true, name: true, slug: true } },
         author: { select: { id: true, name: true, email: true } },
+        published: true,
       },
       orderBy: { createdAt: "desc" },
       take: limit,
@@ -169,6 +172,7 @@ router.get(
           thumbnail: { select: { id: true, url: true } },
           categories: { select: { id: true, name: true } },
           author: { select: { id: true, name: true, email: true } },
+          published: true,
         },
         orderBy: { views: "desc" },
         take: 5,
@@ -226,6 +230,7 @@ router.get(
           thumbnail: { select: { id: true, url: true } },
           categories: { select: { id: true, name: true } },
           author: { select: { id: true, name: true, email: true } },
+          published: true,
         },
       });
 

@@ -77,8 +77,10 @@ router.get("/", async (req: Request, res: Response, next: NextFunction) => {
             content: true,
             thumbnail: { select: { id: true, url: true } },
             author: { select: { id: true, name: true, email: true } },
+            published: true,
           },
         },
+        published: true,
         createdAt: true,
       },
       // where: { published: true },
@@ -138,6 +140,8 @@ router.get(
               author: { select: { id: true, name: true, email: true } },
             },
           },
+          createdAt: true,
+          published: true,
         },
       });
 
@@ -161,11 +165,11 @@ router.patch(
   async (req: CustomRequest, res: Response, next: NextFunction) => {
     const { id } = req.params;
 
-    if (req.role !== "ADMIN") {
-      return next(
-        new AuthError("Unauthorized: Only admins can update a category")
-      );
-    }
+    // if (req.role !== "ADMIN") {
+    //   return next(
+    //     new AuthError("Unauthorized: Only admins can update a category")
+    //   );
+    // }
 
     if (!id) {
       return next(
