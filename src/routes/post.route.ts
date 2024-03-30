@@ -130,6 +130,7 @@ router.get("/", async (req: Request, res: Response, next: NextFunction) => {
         id: true,
         title: true,
         slug: true,
+        description: true,
         content: true,
         views: true,
         thumbnail: { select: { id: true, url: true } },
@@ -167,6 +168,7 @@ router.get(
           id: true,
           title: true,
           slug: true,
+          description: true,
           content: true,
           views: true,
           thumbnail: { select: { id: true, url: true } },
@@ -226,6 +228,7 @@ router.get(
           title: true,
           slug: true,
           views: true,
+          description: true,
           content: true,
           thumbnail: { select: { id: true, url: true } },
           categories: { select: { id: true, name: true } },
@@ -252,7 +255,8 @@ router.patch(
   slugMiddleware("title"),
   async (req: Request, res: Response, next: NextFunction) => {
     const { id } = req.params;
-    const { title, slug, description, content, categories } = req.body;
+    const { title, slug, description, content, categories, published } =
+      req.body;
 
     if (!id) {
       return next(
@@ -314,6 +318,7 @@ router.patch(
                 url: secure_url,
               },
             },
+            published: published === "true" ? true : false,
           },
         });
       } else {
@@ -332,6 +337,7 @@ router.patch(
                 })),
               },
             }),
+            published: published === "true" ? true : false,
           },
         });
       }

@@ -228,6 +228,9 @@ router.delete(
 
       await db.category.delete({ where: { id } });
 
+      // Delete posts associated with the category but dont delete if the post has other categories
+      await db.post.deleteMany({ where: { categories: { some: { id } } } });
+
       res.status(200).json({ message: "Category deleted successfully" });
     } catch (error) {
       console.log(error);

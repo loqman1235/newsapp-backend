@@ -36,11 +36,11 @@ export const updatePostSchema = z.object({
   description: z
     .string()
     .trim()
-    .min(5, { message: "Description must be at least 5 characters" })
-    .max(200, {
-      message: "Description must not be more than 200 characters",
-    })
-    .optional(),
+    .optional()
+    .nullable()
+    .refine((desc) => !desc || desc.length >= 10, {
+      message: "Description must be at least 10 characters",
+    }),
   content: z
     .string()
     .trim()
